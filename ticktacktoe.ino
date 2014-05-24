@@ -1,5 +1,4 @@
-/*first ticktacktoe draft...
- 
+/*first tictactoe draft...
  
  created 2014
  by Daniel, Christian & Lisa
@@ -11,8 +10,8 @@ This code is in the public domain.
 // set pin numbers:
 const int RedledPin   =  2;      // the number of the red LED pin
 const int GreenledPin =  3;      // the number of the green LED pin
-const int sensorPin1  =  A0;     // the number of the sensor (analogue)
-const int threshold  =  200;    // trigger value to switch LED on
+const int sensorPin1  =  A0;     // the number of the sensor (analog pin)
+const int threshold   =  200;    // trigger value to switch LED on (from analog signal)
 // game states
 const int Reset       = 0;
 const int RedTurn     = 1;       
@@ -27,32 +26,35 @@ const int FieldGreen  = 2;
 
 // Variables will change:
 int sensorValue1;        // variable to store the value coming from the sensor, possible Range 0 - 1023
-int RedledState;         // ledState used to set the red LED
-int GreenledState;       // ledState used to set the green LED
+int redledState;         // ledState used to set the red LED
+int greenledState;       // ledState used to set the green LED
 int gameState = Reset;
 int count     = 0;
 int fieldState[9];
 
 
-void setup() {
-  // set the digital pin as output:
+void setup() 
+{
   pinMode(RedledPin, OUTPUT);      
   pinMode(GreenledPin, OUTPUT);      
   pinMode(sensorPin1, INPUT);      
 }
 
-int checkTriplet (int a, int b, int c) {
+int checkTriplet (int a, int b, int c) 
+{
   return fieldState[a] != FieldFree && 
          fieldState[a] == fieldState[b] && 
          fieldState[a] == fieldState[c];
 }
 
-// switch on red or green light
-int switchLamp (int index, int newFieldState) {
+// switch on red or green light, has to be adapted to the actual setting...
+int switchLamp (int index, int newFieldState) 
+{
   
 }
 
-int checkFields(int newFieldState) {
+int checkFields(int newFieldState) 
+{
     int fieldValue = checkSensor();
     if (fieldValue >= 0 && fieldState[fieldValue] == FieldFree) {
       fieldState[fieldValue] = newFieldState;
@@ -60,7 +62,8 @@ int checkFields(int newFieldState) {
     }
 }
 
-int checkWinner() {
+int checkWinner() 
+{
   return checkTriplet(0, 1, 2) ||
          checkTriplet(3, 4, 5) ||
          checkTriplet(6, 7, 8) ||
@@ -98,8 +101,8 @@ void loop()
     gameState = RedTurn;
 
   } else if (gameState == RedTurn) {
-    RedledState   = HIGH;
-    GreenledState = LOW;
+    redledState   = HIGH;
+    greenledState = LOW;
  
     checkFields(FieldRed);   
     
@@ -109,8 +112,8 @@ void loop()
       gameState = GreenTurn;
 
   } else if (gameState == GreenTurn) {
-    GreenledState = HIGH;
-    RedledState   = LOW;
+    greenledState = HIGH;
+    redledState   = LOW;
     
     checkFields(FieldGreen);   
 
@@ -121,16 +124,16 @@ void loop()
     
   } else if (gameState == RedWon) {
     gameState = Reset;
+    
   } else if (gameState == GreenWon) {
     gameState = Reset;
   } 
   
   
-   // set the LED with the ledState of the variable:
-   digitalWrite(GreenledPin, GreenledState);
-   digitalWrite(RedledPin, RedledState);
-  
-  } 
+  // set the LED with the ledState of the variable:
+  digitalWrite(GreenledPin, greenledState);
+  digitalWrite(RedledPin, redledState);
+} 
 
 
   
