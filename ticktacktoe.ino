@@ -10,7 +10,7 @@ This code is published under GPL v2
 // set pin numbers:
 const int RedledPin     = 2;      // the number of the red LED pin
 const int GreenledPin   = 3;      // the number of the green LED pin
-const int SensorPins[9] = {A0, A1, A2, A3, A4, A5, A6, A7, A8};
+const int SensorPins[9] = {A0, A1, A2, A3, A4, A5, A6, A7, A7};
 
 const int Threshold   = 200;    // trigger value to switch LED on (from analog signal)
 const int TimeOut     = 15000;  // number of loops needed for positive input signal 
@@ -38,8 +38,10 @@ int fieldState[9];
 void setup() 
 {
   pinMode(RedledPin, OUTPUT);      
-  pinMode(GreenledPin, OUTPUT);      
-  pinMode(SensorPin1, INPUT);      
+  pinMode(GreenledPin, OUTPUT);  
+  
+  for (int i = 0; i < 9; i++) 
+    pinMode(SensorPins[i], INPUT);      
 }
 
 int checkTriplet (int a, int b, int c) 
@@ -102,7 +104,7 @@ int checkSensor()
       count[i] = 0;
 
     if (count[i] > TimeOut) {
-      count = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+      count[i] = 0;
       return i;
     } 
     return -1; 
