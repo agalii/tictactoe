@@ -3,15 +3,17 @@
  created 2014
  by Daniel, Christian & Lisa
 
-This code is in the public domain.
+This code is published under GPL v2
 */
 
 // constants won't change. Used here to 
 // set pin numbers:
-const int RedledPin   =  2;      // the number of the red LED pin
-const int GreenledPin =  3;      // the number of the green LED pin
-const int sensorPin1  =  A0;     // the number of the sensor (analog pin)
-const int threshold   =  200;    // trigger value to switch LED on (from analog signal)
+const int RedledPin     = 2;      // the number of the red LED pin
+const int GreenledPin   = 3;      // the number of the green LED pin
+const int SensorPins[9] = {A0, A1, A2, A3, A4, A5, A6, A7, A8};
+
+const int Threshold   = 200;    // trigger value to switch LED on (from analog signal)
+const int TimeOut     = 15000;  // number of loops needed for positive input signal 
 // game states
 const int Reset       = 0;
 const int RedTurn     = 1;       
@@ -25,11 +27,11 @@ const int FieldGreen  = 2;
 
 
 // Variables will change:
-int sensorValue1;        // variable to store the value coming from the sensor, possible Range 0 - 1023
+int sensorValue;     // variable to store the value coming from the sensor, possible Range 0 - 1023
 int redledState;         // ledState used to set the red LED
 int greenledState;       // ledState used to set the green LED
 int gameState = Reset;
-int count     = 0;
+int count[9]  = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 int fieldState[9];
 
 
@@ -37,7 +39,7 @@ void setup()
 {
   pinMode(RedledPin, OUTPUT);      
   pinMode(GreenledPin, OUTPUT);      
-  pinMode(sensorPin1, INPUT);      
+  pinMode(SensorPin1, INPUT);      
 }
 
 int checkTriplet (int a, int b, int c) 
@@ -45,6 +47,22 @@ int checkTriplet (int a, int b, int c)
   return fieldState[a] != FieldFree && 
          fieldState[a] == fieldState[b] && 
          fieldState[a] == fieldState[c];
+}
+
+// display whos turn it is, can be adapted to the actual setting...
+int displayState (int state) 
+{
+  switch (state) {
+    case RedTurn:
+      redledState   = HIGH;
+      greenledState = LOW;
+      break;
+
+    case GreenTurn:
+      greenledState = HIGH;
+      redledState   = LOW;
+      break;
+  }
 }
 
 // switch on red or green light, has to be adapted to the actual setting...
@@ -76,18 +94,19 @@ int checkWinner()
 
 int checkSensor()
 {
-  sensorValue1 = analogRead(sensorPin1);    
-  if (sensorValue1 > threshold) 
-    count++;
-  else 
-    count = 0;
-    
-  if (count > 15000) {
-    count = 0;
-    return 1;
+  for (int i = 0; i < 9; i++) {
+    sensorValue = analogRead(SensorPins[i]); 
+    if (sensorValue > Threshold) 
+      count[i]++;
+    else 
+      count[i] = 0;
+
+    if (count[i] > TimeOut) {
+      count = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+      return i;
+    } 
+    return -1; 
   }
-  else 
-    return 0; 
 }
 
   
@@ -95,42 +114,39 @@ int checkSensor()
 
 void loop()
 {
-  if (gameState == Reset) {
-    for (int i = 0; i < 9; i++)
-      fieldState[i] = FieldFree;
-    gameState = RedTurn;
-
-  } else if (gameState == RedTurn) {
-    redledState   = HIGH;
-    greenledState = LOW;
- 
-    checkFields(FieldRed);   
-    
-    if (checkWinner())
-      gameState = RedWon;
-    else
-      gameState = GreenTurn;
-
-  } else if (gameState == GreenTurn) {
-    greenledState = HIGH;
-    redledState   = LOW;
-    
-    checkFields(FieldGreen);   
-
-    if (checkWinner())
-      gameState = GreenWon;
-    else
+  switch (gameState) {
+    case Reset:
+      for (int i = 0; i < 9; i++)
+        fieldState[i] = FieldFree;
       gameState = RedTurn;
+      break;
+
+    case RedTurn:
+      displayState(RedTurn);
+      checkFields(FieldRed);   
     
-  } else if (gameState == RedWon) {
-    gameState = Reset;
-    
-  } else if (gameState == GreenWon) {
-    gameState = Reset;
-  } 
-  
-  
-  // set the LED with the ledState of the variable:
+      if (checkWinner())
+        gameState = RedWon;
+      else
+        gameState = GreenTurn;
+      break;
+
+    case GreenTurn:
+      displayState(GreenTurn);
+      checkFields(FieldGreen);   
+
+      if (checkWinner())
+        gameState = GreenWon;
+      else
+        gameState = RedTurn;
+      break;
+
+    case RedWon:
+    case GreenWon:
+      gameState = Reset;
+      break;
+  }  
+
   digitalWrite(GreenledPin, greenledState);
   digitalWrite(RedledPin, redledState);
 } 
