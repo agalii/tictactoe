@@ -107,8 +107,9 @@ int checkSensor()
       count[i] = 0;
       return i;
     } 
-    return -1; 
   }
+  return -1; 
+  
 }
 
   
