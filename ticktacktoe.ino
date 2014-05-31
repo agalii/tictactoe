@@ -15,8 +15,9 @@ const int RedledPin     = 65;      // the number of the red LED pin
 const int GreenledPin   = 66;      // the number of the green LED pin
 const int SensorPins[9] = {A13, A14, A2, A3, A4, A5, A10, A11, A12};
 const int FieldAddr[9]  = {2, 5, 8, 29, 14, 17, 20, 23, 26};
+const int StroboAddr    = 69;
 
-const int Threshold   = 200;    // trigger value to switch LED on (from analog signal)
+const int Threshold   = 160;    // trigger value to switch LED on (from analog signal)
 const int TimeOut     = 1000;  // number of loops needed for positive input signal 
 // game states
 const int Reset       = 0;
@@ -39,6 +40,7 @@ int gameState = Reset;
 int count[9]  = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 int fieldState[9];
 int idleCount;
+int idleTimeOut;
 
 void setup() 
 {
@@ -52,6 +54,11 @@ void setup()
     pinMode(SensorPins[i], INPUT);    
 
   DmxSimple.write(1, 255); // switch master on 
+  DmxSimple.write(StroboAddr, 0);
+  DmxSimple.write(StroboAddr + 1, 200);
+  DmxSimple.write(StroboAddr + 2, 0);
+ 
+  idleCount = 0;
   gameState = Idle;
 }
 
@@ -79,7 +86,8 @@ int displayState (int state)
 }
 
 int celebrate (int winnerFieldState) {
-   for (int z = 0; z < 15; z++) {
+  DmxSimple.write(StroboAddr, 200);
+  for (int z = 0; z < 15; z++) {
      DmxSimple.write(RedledPin, MaxBrightness);
      DmxSimple.write(GreenledPin, 0);
      for (int i = 0; i < 9; i++) {
@@ -95,7 +103,7 @@ int celebrate (int winnerFieldState) {
      DmxSimple.write(RedledPin, 0);
      DmxSimple.write(GreenledPin, MaxBrightness);
      delay(300);
-   }
+  }
    
   switchAllOff();
 }
@@ -128,6 +136,7 @@ int checkFields(int newFieldState)
     if (fieldValue >= 0 && fieldState[fieldValue] == FieldFree) {
       fieldState[fieldValue] = newFieldState;
       switchLamp(fieldValue, newFieldState, MaxBrightness);
+      idleTimeOut = 0;
       return 1;
     }
     
@@ -182,6 +191,7 @@ void switchAllOff()
 
   DmxSimple.write(RedledPin, 0);
   DmxSimple.write(GreenledPin, 0);
+  DmxSimple.write(StroboAddr, 0);
 }
 
 void loop()
@@ -189,17 +199,26 @@ void loop()
 //  celebrate(FieldRed);
 //  return;
 
+  if (idleTimeOut++ > 30000) {
+    switchAllOff();
+    gameState = Idle;
+    idleTimeOut = 0;
+  }
+
   switch (gameState) {
     case Reset:
       for (int i = 0; i < 9; i++)
         fieldState[i] = FieldFree;
 
       switchAllOff();
-      gameState = RedTurn;
+      idleTimeOut = 0;
+      gameState = random(2) ? RedTurn:GreenTurn;
       break;
 
     case Idle:
       if (checkSensor(FieldFree) == 4) {
+        switchAllOff();
+        delay(1000);
         gameState = Reset;
         break; 
       }
